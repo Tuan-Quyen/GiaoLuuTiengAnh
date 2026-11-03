@@ -1,0 +1,23 @@
+# Chạy trên Rancher Desktop (moby):  docker compose up -d --build
+# Mở từ máy khác trong LAN:          https://<IP-LAN>:3443  (cert tự ký, tạo bằng scripts/make-cert.sh)
+services:
+  toeic3d:
+    build: .
+    image: toeic3d:latest
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3443:3443"
+    environment:
+      PORT: 3443
+      HOST: 0.0.0.0
+      DATA_DIR: /app/data
+      DB_PATH: /db/app.db
+      TLS_CERT: /certs/cert.pem
+      TLS_KEY: /certs/key.pem
+    volumes:
+      - ./data/bank:/app/data/bank:ro
+      - ./data/media:/app/data/media:ro
+      - ./certs:/certs:ro
+      - toeic3d-db:/db
+volumes:
+  toeic3d-db:

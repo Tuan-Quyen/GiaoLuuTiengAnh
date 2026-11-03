@@ -1,0 +1,38 @@
+{
+  "name": "toeic-3d-room",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "import": "tsx server/src/bank/import.ts",
+    "slim-models": "node scripts/slim-models.mjs",
+    "dev": "concurrently -k -n server,client \"PORT=${API_PORT:-3001} NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch server/src/index.ts\" \"vite --port 5173 --strictPort\"",
+    "build": "vite build",
+    "start": "NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx server/src/index.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "smoke": "tsx scripts/smoke.ts",
+    "bots": "tsx scripts/bots.ts"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "dompurify": "^3.4.17",
+    "express": "^5.3.0",
+    "marked": "^18.1.3",
+    "socket.io": "^4.8.4",
+    "three": "^0.187.0",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "@types/compression": "^1.8.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "concurrently": "^10.0.6",
+    "socket.io-client": "^4.8.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}
