@@ -6,7 +6,7 @@
   "scripts": {
     "import": "tsx server/src/bank/import.ts",
     "slim-models": "node scripts/slim-models.mjs",
-    "dev": "concurrently -k -n server,client \"PORT=${API_PORT:-3001} NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch server/src/index.ts\" \"vite --port 5173 --strictPort\"",
+    "dev": "concurrently -k -n server,client \"NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch server/src/index.ts\" \"vite --port 5173 --strictPort\"",
     "build": "vite build",
     "start": "NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx server/src/index.ts",
     "typecheck": "tsc --noEmit -p .",

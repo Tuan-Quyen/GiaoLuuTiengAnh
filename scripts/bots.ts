@@ -1,10 +1,11 @@
 // Giả lập nhiều người chơi để thử tải: npm run bots -- <MÃ_PHÒNG> [số bot=28] [giây=60]
 // Mỗi bot đi ngẫu nhiên trong khu thư giãn, gửi vị trí 10 lần/giây như client thật.
+import '../server/src/env.ts';
 import { io } from 'socket.io-client';
 import { AVATARS } from '../shared/protocol.ts';
 import { resolveCollision } from '../shared/map.ts';
 
-const BASE = process.env.BASE ?? 'http://localhost:3001';
+const BASE = process.env.BASE ?? `http://localhost:${process.env.PORT ?? 3001}`;
 const [room, nArg, secArg] = process.argv.slice(2);
 if (!room) {
   console.error('Cách dùng: npm run bots -- <MÃ_PHÒNG> [số bot] [giây]');

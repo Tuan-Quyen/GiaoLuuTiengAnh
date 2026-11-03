@@ -2,6 +2,7 @@
 //   npm run import                              # đọc TOEIC_VAULT hoặc đường dẫn mặc định
 //   npm run import -- --path /đường/dẫn/TOEIC   # chỉ định thư mục vault
 //   npm run import -- --only ETS_2026_Test_1    # import 1 đề
+import '../env.ts';
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { READING_PARTS, type Part } from '../../../shared/bank.ts';

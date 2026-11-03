@@ -14,7 +14,7 @@ Tài khoản không cần email/mật khẩu: tên hiển thị + **mã khôi ph
 
 Repo **không chứa dữ liệu đề**. `data/`, `certs/`, `assets-src/` đều bị `.gitignore`. Clone về chạy được ngay, nhưng phần ôn tập và thi sẽ trống cho tới khi có `data/bank/`.
 
-Không cần file `.env`: app không đọc `.env`, mọi biến môi trường đều có giá trị mặc định (xem [bảng biến môi trường](#bản-production)).
+Cấu hình nằm trong file `.env` ở gốc repo (không đưa lên git). File mẫu là `.env.example`.
 
 ### Bước 1: Cài Node
 
@@ -38,7 +38,15 @@ cd GiaoLuuTiengAnh
 npm install
 ```
 
-### Bước 3: Lấy dữ liệu đề (chọn một cách)
+### Bước 3: Tạo file `.env`
+
+```bash
+cp .env.example .env
+```
+
+Mở `.env` và sửa **`TOEIC_VAULT`** thành đường dẫn vault trên máy này (chỉ cần nếu lấy đề theo Cách B ở bước 4). Các biến còn lại để nguyên là chạy được. Ý nghĩa từng biến xem [Biến môi trường](#biến-môi-trường).
+
+### Bước 4: Lấy dữ liệu đề (chọn một cách)
 
 **Cách A: chép từ máy đang chạy (nhanh nhất).** Chép hai thư mục sau sang cùng vị trí trên máy mới:
 
@@ -50,17 +58,17 @@ data/
 
 Không chép `app.db` nếu muốn DB mới trống, vì DB tự tạo khi server chạy lần đầu. Muốn mang theo tài khoản và thống kê thì **tắt server trước**, rồi chép đủ cả `app.db`, `app.db-wal`, `app.db-shm`.
 
-**Cách B: import từ vault TOEIC.** Chép vault Markdown sang máy mới rồi chạy:
+**Cách B: import từ vault TOEIC.** Chép vault Markdown sang máy mới, đặt `TOEIC_VAULT` trong `.env` rồi chạy:
 
 ```bash
-npm run import -- --path /đường/dẫn/tới/TOEIC
+npm run import
 ```
 
-Đường dẫn vault mặc định là đường dẫn trên máy gốc, nên trên máy khác **bắt buộc** truyền `--path` (hoặc đặt biến `TOEIC_VAULT`).
+Hoặc chỉ định thẳng: `npm run import -- --path /đường/dẫn/tới/TOEIC`. Nếu không đặt cả hai, import sẽ dùng đường dẫn của máy gốc và báo lỗi.
 
 Kiểm tra: `ls data/bank` phải thấy các file `*.json`.
 
-### Bước 4: Chạy
+### Bước 5: Chạy
 
 ```bash
 npm run dev
@@ -68,15 +76,15 @@ npm run dev
 
 Mở http://localhost:5173 → tạo hồ sơ → **Tạo phòng mới** → bấm **Mời** để chép link gửi bạn.
 
-Cổng 3001 (server) và 5173 (Vite) phải còn trống. Nếu 3001 bị chiếm thì chạy `API_PORT=3002 npm run dev`.
+Cổng 3001 (server) và 5173 (Vite) phải còn trống. Nếu 3001 bị chiếm thì đổi `PORT` trong `.env` (Vite tự proxy theo).
 
-### Bước 5 (tuỳ chọn): Cho máy khác hoặc điện thoại trong LAN vào
+### Bước 6 (tuỳ chọn): Cho máy khác hoặc điện thoại trong LAN vào
 
 Micro chỉ dùng được trên HTTPS (trừ `localhost`). Có hai cách:
 
 | Cách | Lệnh | Mở ở |
 |---|---|---|
-| Dev nhanh | `HTTPS=1 npm run dev` | `https://<IP-máy>:5173` |
+| Dev nhanh | đặt `HTTPS=1` trong `.env`, `npm run dev` | `https://<IP-máy>:5173` |
 | Docker ổn định | xem [Chạy trong LAN bằng docker](#chạy-trong-lan-bằng-rancher-desktop-docker) | `https://<IP-máy>:3443` |
 
 Không chép `certs/` từ máy cũ sang, vì cert gắn với IP của máy cũ. Hãy tạo lại bằng `./scripts/make-cert.sh`.
@@ -99,17 +107,29 @@ npm start
 
 Server phục vụ cả client tại http://localhost:3001 (đổi bằng `PORT`). Đặt sau reverse proxy có HTTPS để dùng micro.
 
-| Biến môi trường | Mặc định | Ý nghĩa |
+### Biến môi trường
+
+Server, `npm run import`, `smoke`, `bots` và Vite đều tự nạp `.env` ở gốc repo (`server/src/env.ts`). Thứ tự ưu tiên:
+
+```
+bien trong shell  >  .env  >  mac dinh trong code
+```
+
+Để trống một biến trong `.env` nghĩa là dùng mặc định. Docker **không** đọc `.env`: biến cho container đặt trong `docker-compose.yml`.
+
+| Biến | Mặc định | Ý nghĩa |
 |---|---|---|
-| `PORT` | `3001` | Cổng server |
+| `PORT` | `3001` | Cổng server; Vite dev proxy về cổng này |
+| `HOST` | `0.0.0.0` | Địa chỉ listen |
+| `APP_TZ` | `Asia/Ho_Chi_Minh` | Múi giờ tính "hôm nay", chuỗi ngày, tuần |
 | `DATA_DIR` | `./data` | Nơi chứa `bank/`, `media/`, `app.db` |
 | `DB_PATH` | `$DATA_DIR/app.db` | File SQLite |
-| `TOEIC_VAULT` | đường dẫn vault TOEIC | Nguồn đề cho `npm run import` |
-| `APP_TZ` | `Asia/Ho_Chi_Minh` | Múi giờ tính "hôm nay", chuỗi ngày, tuần |
-| `ICE_SERVERS` | STUN của Google | JSON danh sách ICE server; thêm TURN nếu voice không thông qua NAT khó |
-| `EXAM_TIME_SCALE` | `1` | Nhân thời gian làm bài (vd `0.01` để test tự nộp nhanh) |
-| `HOST` | `0.0.0.0` | Địa chỉ listen |
+| `TOEIC_VAULT` | vault trên máy gốc | Nguồn đề cho `npm run import` |
+| `HTTPS` | (tắt) | `1` = Vite dev chạy HTTPS tự ký |
 | `TLS_CERT`, `TLS_KEY` | (trống) | Có cả hai thì server chạy HTTPS |
+| `ICE_SERVERS` | STUN Google | JSON ICE server; thêm TURN cho NAT chặt |
+| `EXAM_TIME_SCALE` | `1` | Nhân thời gian thi (`0.01` để test) |
+| `BASE` | `localhost:$PORT` | Server cho `smoke` / `bots` |
 
 ### Chạy trong LAN bằng Rancher Desktop (docker)
 
@@ -129,7 +149,7 @@ docker compose up -d --build
 
 Mở `https://<IP-LAN>:3443` từ máy hoặc điện thoại cùng mạng, chấp nhận cảnh báo cert ("Nâng cao → Tiếp tục"). `make-cert.sh` tự lấy IP của `en0` (macOS) hoặc `hostname -I` (Linux). Nếu lấy sai IP thì truyền vào tay: `./scripts/make-cert.sh 192.168.1.10`. IP đổi thì chạy lại script rồi `docker compose restart`.
 
-Trên máy mới, `npm run import` ở bước đầu được thay bằng [Bước 3](#bước-3-lấy-dữ-liệu-đề-chọn-một-cách): docker chỉ cần `data/bank/` và `data/media/` có sẵn trên máy host.
+Trên máy mới, `npm run import` ở bước đầu được thay bằng [Bước 4](#bước-4-lấy-dữ-liệu-đề-chọn-một-cách): docker chỉ cần `data/bank/` và `data/media/` có sẵn trên máy host.
 
 - Đề (`data/bank`) và ảnh (`data/media`) mount chỉ-đọc từ máy host. Sau `npm run import` thì `docker compose restart` (theo dõi file qua mount của VM không chắc nhận được thay đổi).
 - DB nằm trong volume `toeic3d-db`, không mất khi build lại image. Xoá hẳn: `docker compose down -v`.

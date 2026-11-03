@@ -1,3 +1,4 @@
+import './env.ts';
 import { createServer } from 'node:http';
 import { createServer as createHttpsServer } from 'node:https';
 import { existsSync, readFileSync } from 'node:fs';

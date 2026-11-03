@@ -1,12 +1,13 @@
+import './server/src/env.ts';
 import { defineConfig } from 'vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-const target = `http://localhost:${process.env.API_PORT ?? 3001}`;
+const target = `http://localhost:${process.env.PORT ?? 3001}`;
 
 export default defineConfig({
   root: 'client',
   // HTTPS=1 npm run dev → https tự ký, cần cho micro khi mở từ điện thoại trong mạng LAN
-  plugins: process.env.HTTPS ? [basicSsl()] : [],
+  plugins: process.env.HTTPS === '1' ? [basicSsl()] : [],
   server: {
     host: true,
     port: 5173,

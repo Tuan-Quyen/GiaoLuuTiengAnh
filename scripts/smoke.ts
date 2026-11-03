@@ -1,7 +1,8 @@
 // Kiểm thử nhanh server: npm run smoke (server phải đang chạy, nên dùng EXAM_TIME_SCALE nhỏ)
+import '../server/src/env.ts';
 import { io, type Socket } from 'socket.io-client';
 
-const BASE = process.env.BASE ?? 'http://localhost:3001';
+const BASE = process.env.BASE ?? `http://localhost:${process.env.PORT ?? 3001}`;
 let failures = 0;
 const check = (ok: unknown, msg: string) => {
   console.log(`${ok ? '✓' : '✗'} ${msg}`);
