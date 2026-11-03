@@ -41,7 +41,11 @@ npm install
 ### Bước 3: Tạo file `.env`
 
 ```bash
+# macOS / Linux / Git Bash:
 cp .env.example .env
+
+# Windows (PowerShell / CMD):
+copy .env.example .env
 ```
 
 Mở `.env` và sửa **`TOEIC_VAULT`** thành đường dẫn vault trên máy này (chỉ cần nếu lấy đề theo Cách B ở bước 4). Các biến còn lại để nguyên là chạy được. Ý nghĩa từng biến xem [Biến môi trường](#biến-môi-trường).
@@ -68,11 +72,12 @@ Hoặc chỉ định thẳng: `npm run import -- --path /đường/dẫn/tới/T
 
 Kiểm tra: `ls data/bank` phải thấy các file `*.json`.
 
-### Bước 5: Chạy
+### Bước 5: Chạy (Chế độ Dev)
 
 ```bash
 npm run dev
 ```
+*(Trên Windows PowerShell nếu muốn chạy HTTPS dev: `$env:HTTPS=1; npm run dev`)*
 
 Mở http://localhost:5173 → tạo hồ sơ → **Tạo phòng mới** → bấm **Mời** để chép link gửi bạn.
 
@@ -87,7 +92,7 @@ Micro chỉ dùng được trên HTTPS (trừ `localhost`). Có hai cách:
 | Dev nhanh | đặt `HTTPS=1` trong `.env`, `npm run dev` | `https://<IP-máy>:5173` |
 | Docker ổn định | xem [Chạy trong LAN bằng docker](#chạy-trong-lan-bằng-rancher-desktop-docker) | `https://<IP-máy>:3443` |
 
-Không chép `certs/` từ máy cũ sang, vì cert gắn với IP của máy cũ. Hãy tạo lại bằng `./scripts/make-cert.sh`.
+Không chép `certs/` từ máy cũ sang, vì cert gắn với IP của máy cũ. Hãy tạo lại bằng `.\scripts\make-cert.ps1` (Windows) hoặc `./scripts/make-cert.sh` (macOS/Linux).
 
 ### Mẹo khi dùng
 
@@ -133,23 +138,56 @@ bien trong shell  >  .env  >  mac dinh trong code
 
 ### Chạy trong LAN bằng Rancher Desktop (docker)
 
-Trình duyệt chỉ cho dùng micro trên HTTPS (trừ `localhost`), nên bản LAN chạy HTTPS với cert tự ký.
+Trình duyệt chỉ cho phép dùng micro trên HTTPS (trừ `localhost`), nên bản chạy LAN sử dụng HTTPS với chứng chỉ tự ký (self-signed cert).
 
+#### 1. Chuẩn bị đề thi
+Docker chỉ cần thư mục `data/bank/` và `data/media/` có sẵn trên máy host (xem [Bước 4](#bước-4-lấy-dữ-liệu-đề-chọn-một-cách)). Nếu có vault TOEIC thì chạy:
 ```bash
 npm run import
 ```
 
-```bash
-./scripts/make-cert.sh
-```
+#### 2. Tạo chứng chỉ SSL
+Chạy script tạo chứng chỉ tự ký (script tự động nhận diện IP LAN của máy trên Windows, macOS và Linux):
 
+- **Trên Windows PowerShell**:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\scripts\make-cert.ps1
+  ```
+- **Trên macOS / Linux / Git Bash**:
+  ```bash
+  ./scripts/make-cert.sh
+  ```
+*(Nếu muốn chỉ định thủ công IP LAN: `.\scripts\make-cert.ps1 192.168.1.10` hoặc `./scripts/make-cert.sh 192.168.1.10`)*.
+
+#### 3. Khởi động Docker
 ```bash
 docker compose up -d --build
 ```
 
-Mở `https://<IP-LAN>:3443` từ máy hoặc điện thoại cùng mạng, chấp nhận cảnh báo cert ("Nâng cao → Tiếp tục"). `make-cert.sh` tự lấy IP của `en0` (macOS) hoặc `hostname -I` (Linux). Nếu lấy sai IP thì truyền vào tay: `./scripts/make-cert.sh 192.168.1.10`. IP đổi thì chạy lại script rồi `docker compose restart`.
+#### 4. Truy cập trên trình duyệt
+- **Trên máy tính hiện tại**: Mở **`https://localhost:3443`** *(BẮT BUỘC gõ rõ `https://`, nếu gõ `http://` trình duyệt sẽ ngắt kết nối)*.
+- **Bỏ qua cảnh báo chứng chỉ**: Trình duyệt sẽ hiện cảnh báo bảo mật do cert tự ký. Bấm **Nâng cao (Advanced)** → **Tiếp tục truy cập (Proceed)**. *(Mẹo Chrome: click vào khoảng trống trang cảnh báo rồi gõ phím `thisisunsafe` nếu không thấy nút tiếp tục)*.
 
-Trên máy mới, `npm run import` ở bước đầu được thay bằng [Bước 4](#bước-4-lấy-dữ-liệu-đề-chọn-một-cách): docker chỉ cần `data/bank/` và `data/media/` có sẵn trên máy host.
+#### 5. Cấu hình mở cho điện thoại / thiết bị khác trong LAN (Windows)
+Trên Windows, Rancher Desktop (hoặc Docker chạy qua WSL2) mặc định chỉ chuyển tiếp cổng vào loopback `127.0.0.1:3443`, các máy khác trong mạng WiFi chưa kết nối được ngay. Để mở cho điện thoại/máy khác:
+
+1. Mở **PowerShell bằng quyền Administrator** (Run as Administrator).
+2. Chạy 2 lệnh sau để Windows chuyển tiếp cổng 3443 từ card mạng LAN vào localhost và mở Firewall:
+   ```powershell
+   # Lưu ý: listenaddress phải là IP LAN của máy (ví dụ 192.168.1.12), không dùng 0.0.0.0 để tránh bị lặp cổng
+netsh interface portproxy add v4tov4 listenaddress=<IP-LAN> listenport=3443 connectaddress=127.0.0.1 connectport=3443
+   netsh advfirewall firewall add rule name="TOEIC 3D HTTPS" dir=in action=allow protocol=TCP localport=3443
+   ```
+3. Từ điện thoại hoặc máy khác trong cùng WiFi, truy cập: **`https://<IP-LAN>:3443`** (ví dụ `https://192.168.1.12:3443`).
+
+#### 6. Lưu ý khi khởi động lại máy tính (Reset máy)
+- **Container tự bật lại**: Cấu hình `restart: unless-stopped` đảm bảo chỉ cần bạn mở Rancher Desktop lên là web server tự chạy, không cần gõ lại lệnh `docker compose up`.
+- **Dữ liệu an toàn**: Tài khoản và thống kê lưu trong Docker volume `toeic3d-db`, đề thi mount trực tiếp từ máy host, hoàn toàn không bị mất khi reset máy.
+- **Đổi mạng WiFi**: Khi máy tính đổi sang mạng WiFi khác (IP LAN của máy thay đổi), chứng chỉ cũ sẽ không khớp với IP mới. Chỉ cần chạy lại script tạo cert rồi restart container:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\scripts\make-cert.ps1
+  docker compose restart
+  ```
 
 - Đề (`data/bank`) và ảnh (`data/media`) mount chỉ-đọc từ máy host. Sau `npm run import` thì `docker compose restart` (theo dõi file qua mount của VM không chắc nhận được thay đổi).
 - DB nằm trong volume `toeic3d-db`, không mất khi build lại image. Xoá hẳn: `docker compose down -v`.

@@ -92,7 +92,7 @@ export async function chooseRoom(me: Me): Promise<string> {
       h('h1', `Xin chào, ${me.name} 👋`),
       h('p.muted.small', 'Phòng là nhóm kín: chỉ ai có mã hoặc link mời mới vào được.'),
       h('form.row', { onsubmit: (e: Event) => { e.preventDefault(); if (code.value.trim().length >= 4) go(code.value.trim().toUpperCase()); } }, code, h('button.primary', { type: 'submit' }, 'Vào phòng')),
-      rooms.length ? h('div.col.room-list', { style: { gap: '6px' } }, h('div.small.muted', 'Phòng gần đây'), rooms.map((r) => h('button', { onclick: () => go(r.code) }, h('span', r.name, ' ', h('span.muted.mono.small', r.code)), h('span.muted.small', r.online ? `${r.online} online` : '')))) : null,
+      rooms.length ? h('div.col.room-list', { style: { gap: '6px' } }, h('div.small.muted', 'Phòng đang mở / gần đây'), rooms.map((r) => h('button', { onclick: () => go(r.code) }, h('span', r.name, ' ', h('span.muted.mono.small', r.code)), h('span.muted.small', r.online ? `🟢 ${r.online} online` : '')))) : null,
       h('hr', { style: { border: 'none', borderTop: '1px solid var(--line)', width: '100%' } }),
       h('form.row', {
         onsubmit: async (e: Event) => {

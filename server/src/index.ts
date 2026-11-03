@@ -23,7 +23,7 @@ import { db } from './db.ts';
 import * as exam from './exam.ts';
 import { HttpError } from './exam.ts';
 import { CLIENT_DIST, MEDIA_DIR } from './paths.ts';
-import { onlineCount, setupRealtime, whereIs } from './realtime.ts';
+import { onlineCount, setupRealtime, whereIs, activeRoomCodes } from './realtime.ts';
 import * as social from './social.ts';
 
 const app = express();
@@ -92,14 +92,29 @@ api.post('/rooms', h((req) => {
   db.prepare('INSERT INTO room_members (room_code, user_id, joined_at) VALUES (?, ?, ?)').run(code, req.user!.id, Date.now());
   return { code, name };
 }));
-api.get('/rooms', h((req) =>
-  (db
+api.get('/rooms', h((req) => {
+  const memberRooms = db
     .prepare(
       `SELECT r.code, r.name FROM room_members m JOIN rooms r ON r.code = m.room_code
        WHERE m.user_id = ? ORDER BY m.joined_at DESC LIMIT 20`,
     )
-    .all(req.user!.id) as { code: string; name: string }[]).map((r) => ({ ...r, online: onlineCount(r.code) })),
-));
+    .all(req.user!.id) as { code: string; name: string }[];
+
+  const activeCodes = activeRoomCodes();
+  const activeRooms = activeCodes.length
+    ? (db.prepare(`SELECT code, name FROM rooms WHERE code IN (${activeCodes.map(() => '?').join(',')})`).all(...activeCodes) as { code: string; name: string }[])
+    : [];
+
+  const seen = new Set<string>();
+  const list: { code: string; name: string; online: number }[] = [];
+  for (const r of [...activeRooms, ...memberRooms]) {
+    if (!seen.has(r.code)) {
+      seen.add(r.code);
+      list.push({ ...r, online: onlineCount(r.code) });
+    }
+  }
+  return list;
+}));
 api.get('/rooms/:code', h((req) => roomOf(req)));
 
 // --- Ôn tập (thư viện) ---

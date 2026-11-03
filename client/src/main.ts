@@ -44,7 +44,7 @@ async function boot() {
 
   // ---------- HUD ----------
   const onlineEl = h('b', '1');
-  const zoneEl = h('span.zone-tag', ZONE_LABEL[self.zone]);
+  const zoneEl = h('span.zone-tag', `Khu: ${ZONE_LABEL[self.zone]}`);
   const pomoEl = h('span.pomo');
   const inviteUrl = () => {
     const u = new URL(location.origin + location.pathname);
@@ -55,16 +55,36 @@ async function boot() {
     'div.hud-top',
     h(
       'div.pill',
-      h('span.hide-mobile', room.name),
-      h('span.mono.muted', room.code),
+      h('span.room-title', room.name),
+      h('span.mono.muted', ` (${room.code})`),
       h('button', {
         onclick: () => {
           const url = inviteUrl();
-          ('share' in navigator && isTouch() ? navigator.share({ title: room.name, url }) : navigator.clipboard.writeText(url).then(() => toast('Đã chép link mời'))).catch(() => prompt('Link mời:', url));
+          const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+          const msg = isLocal
+            ? `Đã chép link mời (mã: ${room.code}). Trên điện thoại hãy đổi "localhost" thành IP máy tính.`
+            : `Đã chép link mời phòng: ${room.name} (${room.code})`;
+          ('share' in navigator && isTouch() ? navigator.share({ title: room.name, url }) : navigator.clipboard.writeText(url).then(() => toast(msg, 6000))).catch(() => prompt('Link mời:', url));
         },
       }, 'Mời'),
     ),
-    h('div.pill', '👥 ', onlineEl, h('span.hide-mobile', ' online'), ' · ', zoneEl),
+    h(
+      'div.pill',
+      {
+        style: { cursor: 'pointer' },
+        title: 'Bấm để xem danh sách và vị trí mọi người',
+        onclick: () => {
+          const list = g?.getPlayers() ?? [];
+          const lines = list.map((p) => `• ${p.name}${p.self ? ' (Bạn)' : ''}: ${ZONE_LABEL[p.zone]}`).join('\n');
+          toast(`👥 Đang trong phòng (${list.length}):\n${lines}`, 6000);
+        },
+      },
+      '👥 ',
+      onlineEl,
+      h('span.hide-mobile', ' online'),
+      ' · ',
+      zoneEl,
+    ),
     h('div.pill', pomoEl),
     h('div.spacer'),
     h(
@@ -171,7 +191,7 @@ async function boot() {
   game = new Game(document.getElementById('scene') as HTMLCanvasElement, socket, { ...self }, join.players!, join.seats!, {
     zone: (z) => {
       zone = z;
-      zoneEl.textContent = ZONE_LABEL[z];
+      zoneEl.textContent = `Khu: ${ZONE_LABEL[z]}`;
       chat.setZone(z);
       if (z !== 'lounge' && voice.micOn) {
         voice.setMic(false);
@@ -191,10 +211,13 @@ async function boot() {
       nearSeat = s;
       renderActions();
     },
+    joined: (p) => toast(`👋 ${p.name} vừa vào phòng (đang ở ${ZONE_LABEL[p.zone]})`),
+    left: ({ name }) => name && toast(`🚪 ${name} đã rời phòng`),
   });
   chat.setZone(zone);
   renderActions();
   const g = game;
+  toast(`📚 Đã vào phòng "${room.name}". Bạn đang ở Khu thư giãn — đi qua cửa để sang Thư viện học bài nhé!`, 6000);
   if (import.meta.env.DEV) Object.assign(window, { __game: g, __voice: voice, __exam: exam });
 
   addEventListener('keydown', (e) => {

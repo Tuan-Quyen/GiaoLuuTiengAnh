@@ -4,3 +4,4 @@ data/
 assets-src/
 .env
 certs/
+.history

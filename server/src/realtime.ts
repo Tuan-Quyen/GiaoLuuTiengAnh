@@ -79,6 +79,14 @@ export function onlineCount(code: string) {
   return r ? new Set([...r.players.values()].map((p) => p.userId)).size : 0;
 }
 
+export function activeRoomCodes(): string[] {
+  const codes: string[] = [];
+  for (const [code, r] of rooms) {
+    if (r.players.size > 0) codes.push(code);
+  }
+  return codes;
+}
+
 export function setupRealtime(io: Server) {
   io.use((socket, next) => {
     const user = userFromToken(socket.handshake.auth?.token);

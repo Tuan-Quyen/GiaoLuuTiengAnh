@@ -181,6 +181,7 @@ table.lb tr.me td { background: rgba(244,184,96,.1); }
   .overlay { padding: 0; }
   .chat .msgs { height: 120px; }
   .hide-mobile { display: none !important; }
+  .room-title { max-width: 95px !important; }
   .stat b { font-size: 18px; }
 }
 @media (hover: none) { .kbd { display: none; } }

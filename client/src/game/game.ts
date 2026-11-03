@@ -20,6 +20,8 @@ export interface GameEvents {
   seat(seatId: string | null): void;
   players(count: number): void;
   nearSeat(seat: Seat | null): void;
+  joined?(p: PlayerInfo): void;
+  left?(p: { sid: string; name?: string }): void;
 }
 
 const WALK = 3;
@@ -92,11 +94,15 @@ export class Game {
     s.on('player:join', (p: PlayerInfo) => {
       this.addRemote(p);
       this.ev.players(this.onlineCount());
+      this.ev.joined?.(p);
     });
     s.on('player:leave', ({ sid }: { sid: string }) => {
-      this.remotes.get(sid)?.avatar.dispose();
+      const r = this.remotes.get(sid);
+      const name = r?.info.name;
+      r?.avatar.dispose();
       this.remotes.delete(sid);
       this.ev.players(this.onlineCount());
+      this.ev.left?.({ sid, name });
     });
     s.on('player:update', (p: PlayerInfo) => {
       const r = this.remotes.get(p.sid);
@@ -186,6 +192,14 @@ export class Game {
 
   onlineCount() {
     return new Set([this.me.userId, ...[...this.remotes.values()].map((r) => r.info.userId)]).size;
+  }
+
+  getPlayers(): { name: string; zone: Zone; self: boolean }[] {
+    const list = [{ name: this.me.name, zone: this.me.zone, self: true }];
+    for (const r of this.remotes.values()) {
+      list.push({ name: r.info.name, zone: r.info.zone, self: false });
+    }
+    return list;
   }
 
   takeSeat(seatId: string) {
