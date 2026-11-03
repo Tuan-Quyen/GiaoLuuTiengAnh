@@ -10,23 +10,78 @@ Web app học nhóm (nhóm kín, vào bằng mã phòng / link mời) trong mộ
 
 Tài khoản không cần email/mật khẩu: tên hiển thị + **mã khôi phục**. Có bạn bè (kết bạn bằng mã), thống kê theo ngày/chuỗi/tổng và bảng xếp hạng tuần (giờ học, điểm thi).
 
-## Chạy local
+## Cài đặt trên máy mới
 
-Yêu cầu: **Node ≥ 22.13** (dùng `node:sqlite` có sẵn, không cần cài DB).
+Repo **không chứa dữ liệu đề**. `data/`, `certs/`, `assets-src/` đều bị `.gitignore`. Clone về chạy được ngay, nhưng phần ôn tập và thi sẽ trống cho tới khi có `data/bank/`.
+
+Không cần file `.env`: app không đọc `.env`, mọi biến môi trường đều có giá trị mặc định (xem [bảng biến môi trường](#bản-production)).
+
+### Bước 1: Cài Node
+
+Cần **Node ≥ 22.13**, vì app dùng `node:sqlite` có sẵn trong Node nên không phải cài DB.
+
+```bash
+node -v
+```
+
+### Bước 2: Clone và cài package
+
+```bash
+git clone https://github.com/Tuan-Quyen/GiaoLuuTiengAnh.git
+```
+
+```bash
+cd GiaoLuuTiengAnh
+```
 
 ```bash
 npm install
 ```
 
-```bash
-npm run import
+### Bước 3: Lấy dữ liệu đề (chọn một cách)
+
+**Cách A: chép từ máy đang chạy (nhanh nhất).** Chép hai thư mục sau sang cùng vị trí trên máy mới:
+
 ```
+data/
+├── bank/    đề đã import (*.json)
+└── media/   ảnh đoạn văn Part 6/7
+```
+
+Không chép `app.db` nếu muốn DB mới trống, vì DB tự tạo khi server chạy lần đầu. Muốn mang theo tài khoản và thống kê thì **tắt server trước**, rồi chép đủ cả `app.db`, `app.db-wal`, `app.db-shm`.
+
+**Cách B: import từ vault TOEIC.** Chép vault Markdown sang máy mới rồi chạy:
+
+```bash
+npm run import -- --path /đường/dẫn/tới/TOEIC
+```
+
+Đường dẫn vault mặc định là đường dẫn trên máy gốc, nên trên máy khác **bắt buộc** truyền `--path` (hoặc đặt biến `TOEIC_VAULT`).
+
+Kiểm tra: `ls data/bank` phải thấy các file `*.json`.
+
+### Bước 4: Chạy
 
 ```bash
 npm run dev
 ```
 
 Mở http://localhost:5173 → tạo hồ sơ → **Tạo phòng mới** → bấm **Mời** để chép link gửi bạn.
+
+Cổng 3001 (server) và 5173 (Vite) phải còn trống. Nếu 3001 bị chiếm thì chạy `API_PORT=3002 npm run dev`.
+
+### Bước 5 (tuỳ chọn): Cho máy khác hoặc điện thoại trong LAN vào
+
+Micro chỉ dùng được trên HTTPS (trừ `localhost`). Có hai cách:
+
+| Cách | Lệnh | Mở ở |
+|---|---|---|
+| Dev nhanh | `HTTPS=1 npm run dev` | `https://<IP-máy>:5173` |
+| Docker ổn định | xem [Chạy trong LAN bằng docker](#chạy-trong-lan-bằng-rancher-desktop-docker) | `https://<IP-máy>:3443` |
+
+Không chép `certs/` từ máy cũ sang, vì cert gắn với IP của máy cũ. Hãy tạo lại bằng `./scripts/make-cert.sh`.
+
+### Mẹo khi dùng
 
 - **Thử 2 người trên một máy**: mở thêm một tab với `&profile=b` ở cuối URL (mỗi profile giữ phiên đăng nhập riêng), hoặc dùng cửa sổ ẩn danh.
 - **Điều khiển**: WASD/mũi tên để đi, Shift để chạy, kéo chuột để xoay camera, lăn chuột để zoom; `E` ngồi/đứng/vào phòng thi, `N` gật đầu, `Enter` để chat. Trên điện thoại dùng joystick ảo, kéo một ngón để xoay camera, chụm hai ngón để zoom.
@@ -72,7 +127,9 @@ npm run import
 docker compose up -d --build
 ```
 
-Mở `https://<IP-LAN>:3443` từ máy hoặc điện thoại cùng mạng, chấp nhận cảnh báo cert ("Nâng cao → Tiếp tục"). `make-cert.sh` tự lấy IP của `en0`; IP đổi thì chạy lại script rồi `docker compose restart`.
+Mở `https://<IP-LAN>:3443` từ máy hoặc điện thoại cùng mạng, chấp nhận cảnh báo cert ("Nâng cao → Tiếp tục"). `make-cert.sh` tự lấy IP của `en0` (macOS) hoặc `hostname -I` (Linux). Nếu lấy sai IP thì truyền vào tay: `./scripts/make-cert.sh 192.168.1.10`. IP đổi thì chạy lại script rồi `docker compose restart`.
+
+Trên máy mới, `npm run import` ở bước đầu được thay bằng [Bước 3](#bước-3-lấy-dữ-liệu-đề-chọn-một-cách): docker chỉ cần `data/bank/` và `data/media/` có sẵn trên máy host.
 
 - Đề (`data/bank`) và ảnh (`data/media`) mount chỉ-đọc từ máy host. Sau `npm run import` thì `docker compose restart` (theo dõi file qua mount của VM không chắc nhận được thay đổi).
 - DB nằm trong volume `toeic3d-db`, không mất khi build lại image. Xoá hẳn: `docker compose down -v`.
