@@ -4,11 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "lan": "node scripts/start-lan.mjs",
     "import": "tsx server/src/bank/import.ts",
     "slim-models": "node scripts/slim-models.mjs",
-    "dev": "concurrently -k -n server,client \"NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch server/src/index.ts\" \"vite --port 5173 --strictPort\"",
+    "dev": "concurrently -k -n server,client \"cross-env NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch server/src/index.ts\" \"vite --port 5173 --strictPort\"",
     "build": "vite build",
-    "start": "NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx server/src/index.ts",
+    "start": "cross-env NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx server/src/index.ts",
     "typecheck": "tsc --noEmit -p .",
     "smoke": "tsx scripts/smoke.ts",
     "bots": "tsx scripts/bots.ts"
@@ -31,6 +32,7 @@
     "@types/three": "^0.187.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
     "socket.io-client": "^4.8.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
